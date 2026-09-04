@@ -16,6 +16,7 @@ import { buildForest } from "./trees.js";
 */
 
 const FT = 0.3048 / 10; // feet -> world units
+const M = 0.1;          // metres -> world units (1 unit = 10 m)
 const BASE_FT = 6650;
 const ftToY = (ft) => (ft - BASE_FT) * FT;
 const yToFt = (y) => y / FT + BASE_FT;
@@ -206,37 +207,53 @@ export default function PhilmontPOC() {
     scene.add(trail);
 
     // ---------- base camp ----------
+    // Everything here is authored in metres and converted, because the camp was
+    // originally built as though 1 unit = 1 m: the tents came out 15 m across
+    // and 9 m tall, spaced 24 m apart, and read as pyramids from the ground.
     const camp = new THREE.Group();
-    const box = (w, h, d, col, x, z, ry = 0) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: col }));
+    const box = (wM, hM, dM, col, x, z, ry = 0) => {
+      const h = hM * M;
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(wM * M, h, dM * M),
+        new THREE.MeshLambertMaterial({ color: col })
+      );
       m.position.set(x, elevY(x, z) + h / 2, z);
       m.rotation.y = ry;
       camp.add(m);
       return m;
     };
-    box(9, 1.2, 6, "#c9b28e", 4, -6);        // Welcome Center pavilion
-    box(14, 1.6, 8, "#a8845c", 22, 4);        // Camper dining hall
-    box(16, 1.4, 5, "#9d8b73", 20, 18, 0.3);  // Services (L-shaped, simplified)
-    box(7, 1.3, 7, "#d6cdb6", -6, 14);        // Health Lodge
-    box(6, 1.1, 6, "#b78d5c", 8, 24);         // Tooth of Time Traders
-    // flagpole
-    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 3, 6), new THREE.MeshLambertMaterial({ color: "#eee" }));
-    pole.position.set(2, elevY(2, -2) + 1.5, -2); camp.add(pole);
-    const flag = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.7), new THREE.MeshLambertMaterial({ color: "#b3272d", side: THREE.DoubleSide }));
-    flag.position.set(2.6, elevY(2, -2) + 2.7, -2); camp.add(flag);
+    box(25, 6, 15, "#c9b28e", 4, -6);         // Welcome Center pavilion
+    box(50, 9, 26, "#a8845c", 22, 4);         // Camper dining hall
+    box(46, 7, 16, "#9d8b73", 20, 18, 0.3);   // Services (L-shaped, simplified)
+    box(20, 6, 18, "#d6cdb6", -6, 14);        // Health Lodge
+    box(26, 6, 18, "#b78d5c", 8, 24);         // Tooth of Time Traders
+    // flagpole — 12 m mast, 3 m flag
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * M, 0.15 * M, 12 * M, 6), new THREE.MeshLambertMaterial({ color: "#eee" }));
+    pole.position.set(2, elevY(2, -2) + 6 * M, -2); camp.add(pole);
+    const flag = new THREE.Mesh(new THREE.PlaneGeometry(3.0 * M, 1.9 * M), new THREE.MeshLambertMaterial({ color: "#b3272d", side: THREE.DoubleSide }));
+    flag.position.set(2 + 1.6 * M, elevY(2, -2) + 10.5 * M, -2); camp.add(flag);
     // tent cities: Trailbound / Homebound
-    const tentGeo = new THREE.ConeGeometry(0.75, 0.9, 4); tentGeo.translate(0, 0.45, 0); tentGeo.rotateY(Math.PI / 4);
+    // Wall tents on platforms: a 3.2 m square footprint, 2.4 m to the ridge.
+    // A 4-segment cone inscribes its square base in `radius`, hence the /sqrt(2).
+    const TENT_SIDE = 3.2, TENT_H = 2.4;
+    const tentGeo = new THREE.ConeGeometry((TENT_SIDE / Math.SQRT2) * M, TENT_H * M, 4);
+    tentGeo.translate(0, (TENT_H / 2) * M, 0); tentGeo.rotateY(Math.PI / 4);
     const tents = new THREE.InstancedMesh(tentGeo, new THREE.MeshLambertMaterial({ color: "#c9bf9c" }), 420);
     let ti = 0;
-    const tentCity = (ox, oz, rows, cols) => {
+    // Take a centre rather than a corner, so shrinking the spacing leaves each
+    // city where it already sat instead of collapsing it toward its origin.
+    const TENT_DX = 5.5 * M, TENT_DZ = 6.5 * M;
+    const tentCity = (cx, cz, rows, cols) => {
+      const x0 = cx - ((cols - 1) * TENT_DX) / 2;
+      const z0 = cz - ((rows - 1) * TENT_DZ) / 2;
       for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-        const x = ox + c * 2.4, z = oz + r * 2.6;
+        const x = x0 + c * TENT_DX, z = z0 + r * TENT_DZ;
         m4.compose(new THREE.Vector3(x, elevY(x, z), z), q, new THREE.Vector3(1, 1, 1));
         tents.setMatrixAt(ti++, m4);
       }
     };
-    tentCity(-38, -30, 12, 16);  // Trailbound
-    tentCity(-38, 26, 12, 16);   // Homebound
+    tentCity(-20, -15.7, 12, 16);  // Trailbound
+    tentCity(-20, 40.3, 12, 16);   // Homebound
     tents.count = ti; camp.add(tents);
     scene.add(camp);
     const chqLabel = makeLabel("Camping Headquarters", "Base Camp · 6,650 ft");
@@ -250,8 +267,8 @@ export default function PhilmontPOC() {
       const x = RIDGE_CAMP[0] + Math.cos(i * 1.3) * 3.2, z = RIDGE_CAMP[1] + Math.sin(i * 1.3) * 3.2;
       t.position.set(x, elevY(x, z), z); rc.add(t);
     }
-    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.4, 0.15), new THREE.MeshLambertMaterial({ color: "#5a3f28" }));
-    sign.position.set(RIDGE_CAMP[0], rcY + 0.7, RIDGE_CAMP[1] + 4); rc.add(sign);
+    const sign = new THREE.Mesh(new THREE.BoxGeometry(0.15 * M, 2.0 * M, 0.15 * M), new THREE.MeshLambertMaterial({ color: "#5a3f28" }));
+    sign.position.set(RIDGE_CAMP[0], rcY + 1.0 * M, RIDGE_CAMP[1] + 4); rc.add(sign);
     scene.add(rc);
     const rcLabel = makeLabel("Tooth Ridge Camp", "Trail camp · 8,300 ft");
     rcLabel.position.set(RIDGE_CAMP[0], rcY + 8, RIDGE_CAMP[1]); scene.add(rcLabel);

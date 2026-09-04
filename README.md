@@ -48,14 +48,33 @@ Two adjustments were needed to make real models fit the scene:
   cone placeholders' `#2f4a2f` and a muted ponderosa bark. Set `RECOLOUR = false`
   in `src/trees.js` to keep the originals.
 
-## Known issue: base camp scale
+## Base camp scale
 
-The tent cities and camp buildings are sized as though 1 unit = 1 m, not 10 m.
-`tentGeo` is a `ConeGeometry(0.75, 0.9, 4)` — a 15 m wide, 9 m tall tent — and
-the rows are spaced 24 m apart. From the ground in Walk mode they read as
-pyramids. This predates the forest work and is left as-is because fixing it
-means re-deciding the camp's footprint. Dividing the tent and building
-dimensions by roughly 10 is the likely fix.
+The camp was originally built as though 1 unit = 1 m rather than 10 m: tents
+were 15 m across and 9 m tall, spaced 24 m apart, and read as pyramids from the
+ground. Camp geometry is now authored in metres and converted through `M`, so
+the dimensions in the source say what they mean:
+
+| | Now | Was |
+| --- | --- | --- |
+| Tent | 3.2 × 3.2 m, 2.4 m to the ridge | 15 × 15 m, 9 m |
+| Tent spacing | 5.5 × 6.5 m | 24 × 26 m |
+| Dining hall | 50 × 26 m, 9 m tall | 140 × 80 m, 16 m |
+| Flagpole | 12 m | 30 m |
+| Trail camp sign | 2.0 m | 14 m |
+
+For reference, Walk mode puts the eye at 1.8 m, so a tent now stands just over
+head height.
+
+`tentCity()` takes a centre rather than a corner, so tightening the spacing left
+Trailbound and Homebound where they already sat instead of collapsing each one
+toward its origin. Their centres, and every building position, are unchanged.
+
+The one thing still sized for the old camp is the landmark labels: the sprites
+are 240 m wide and float 90 m up. That reads correctly in Overview and like a
+billboard from the ground. Setting `sizeAttenuation = false` in `makeLabel()`
+would give them a constant on-screen size, at the cost of changing how the
+overview reads.
 
 ## Assets
 
