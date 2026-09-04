@@ -1,53 +1,61 @@
-# philmont-game
+# Philmont — browser 3D proof of concept
 
-A three.js hiking game set in the Philmont high country. Right now the
-repository contains a terrain-and-forest scene: procedurally generated
-mountain terrain with a low-poly conifer forest scattered across it.
+Base Camp (Camping Headquarters) and the Tooth Ridge Trail to Tooth Ridge Camp,
+built with Vite + React + Three.js.
 
 ![Preview](docs/preview.png)
 
-## Running it
-
-```sh
+```bash
 npm install
 npm run dev
 ```
 
-Drag to orbit, scroll to zoom.
+In a GitHub Codespace, open the forwarded port that Vite prints.
+
+- **Overview** — drag to orbit, scroll to zoom
+- **Walk** — click the view to capture the mouse, W A S D to move, Shift to run, Esc to release
+- **Hike the trail** — auto-hike from headquarters to Tooth Ridge Camp
+
+Scale: 1 world unit = 10 m. Camp and landmark positions come from Philmont's
+2017 UTM & Elevation Reference Guide. Terrain is a stylized heightfield
+(`elevFt()` in `src/PhilmontPOC.jsx`); replacing it with a USGS 3DEP heightmap
+is the next step.
 
 ## Layout
 
 | Path | What it is |
 | --- | --- |
-| `src/terrain.js` | Height field and the flat-shaded, vertex-coloured terrain mesh |
-| `src/scatter.js` | glTF loading, instancing, and terrain-aware placement |
-| `src/main.js` | Scene, lighting, and the forest/outcrop composition |
+| `src/PhilmontPOC.jsx` | Terrain, landmarks, trail, camps, controls, HUD |
+| `src/trees.js` | Loads the conifer models and instances the forest |
 | `public/assets/models/` | Third-party models — see `public/assets/ATTRIBUTION.md` |
 
-## Terrain
+## The forest
 
-The terrain is generated, not modelled. `makeHeightField` sums fBm and ridged
-noise over three.js's `ImprovedNoise` and adds a corner massif so there is a
-summit to climb, then eases the field down toward the rim so the plane's edge
-sits low instead of ending in a cliff. `buildTerrain` displaces a
-`PlaneGeometry`, converts it to non-indexed geometry for flat shading, and
-colours vertices by elevation and slope — meadow, timber, talus, snow — so no
-ground textures are needed.
+`src/trees.js` replaces the `ConeGeometry` placeholders with Kenney's low-poly
+conifers. Placement is unchanged — same hash stream, same elevation-band
+density, same base-camp exclusion — so the forest sits exactly where the cones
+did. Two species are drawn as one `InstancedMesh` per material, so 7,000 trees
+cost four draw calls (about 3.9M triangles).
 
-The same height function drives placement, so props and ground always agree.
+Two adjustments were needed to make real models fit the scene:
 
-## Scattering
+- **Shading.** glTF ships `MeshStandardMaterial`, which is much darker than
+  `MeshLambertMaterial` under this scene's lights with no environment map — the
+  trees came out near-black. They are re-materialised as Lambert so they shade
+  like everything else.
+- **Colour.** The models carry Kenney's city-kit palette (mint foliage, sandy
+  trunk), which reads as decorative here. Foliage and bark are recoloured to the
+  cone placeholders' `#2f4a2f` and a muted ponderosa bark. Set `RECOLOUR = false`
+  in `src/trees.js` to keep the originals.
 
-`scatterOnTerrain` rejection-samples positions inside an elevation band,
-skips ground too steep to hold soil, and sinks each model by roughly the rise
-across its own footprint — without that, a wide flat-bottomed rock standing on
-a slope leaves its downhill edge hanging in the air. Placements are then drawn
-with one `InstancedMesh` per material, so the ~2,400 trees cost a handful of
-draw calls. A seeded PRNG keeps a given seed reproducible.
+## Known issue: base camp scale
 
-Outcrops are deliberately kept at or below the treeline. Placed higher they are
-still correctly seated, but intervening ridges hide their bases and they read
-as though they are hovering.
+The tent cities and camp buildings are sized as though 1 unit = 1 m, not 10 m.
+`tentGeo` is a `ConeGeometry(0.75, 0.9, 4)` — a 15 m wide, 9 m tall tent — and
+the rows are spaced 24 m apart. From the ground in Walk mode they read as
+pyramids. This predates the forest work and is left as-is because fixing it
+means re-deciding the camp's footprint. Dividing the tent and building
+dimensions by roughly 10 is the likely fix.
 
 ## Assets
 

@@ -24,7 +24,9 @@ project.
 
 Renamed for clarity (`tree-big` → `pine-large`, etc.), and decompressed from
 DRACO to plain glTF so the runtime needs no DRACO decoder. Geometry is
-otherwise unmodified.
+unmodified. At runtime `src/trees.js` swaps the glTF `MeshStandardMaterial` for
+`MeshLambertMaterial` and recolours foliage and bark to the scene palette; the
+files on disk keep their original materials.
 
 ## Grass-and-pine tiles
 
@@ -45,8 +47,8 @@ as an option for tile-based layouts. **They reference the external texture
 
 ## Not included
 
-Terrain is generated procedurally in `src/terrain.js` rather than shipped as a
-model. The usual sources for free terrain and nature art (kenney.nl, poly.pizza,
+Terrain is generated procedurally by `elevFt()` in `src/PhilmontPOC.jsx` rather
+than shipped as a model. The usual sources for free terrain and nature art (kenney.nl, poly.pizza,
 quaternius.com, opengameart.org, sketchfab.com, Poly Haven) were all blocked by
 the network policy of the environment this was assembled in, so the search was
 limited to what is mirrored on GitHub.
