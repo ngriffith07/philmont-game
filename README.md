@@ -81,14 +81,10 @@ overview reads.
 ## Deployment
 
 Hosted on Railway (project `philmont-game`, service `philmont-web`), which
-watches the `claude/create-main-branch-mov0xn` branch and redeploys on push.
-Railway runs `npm run build` and then `npm start`, which serves `dist/` on the
-platform's `$PORT`. `preview.allowedHosts` is open in `vite.config.js` because
-`vite preview` otherwise rejects the deploy-time host name.
-
-Note that `main` still holds only the repository's first commit. If the branch
-is ever merged into `main`, point the Railway service at `main` too, or it will
-keep building the old branch.
+watches `main` and redeploys on push. Railway runs `npm run build` and then
+`npm start`, which serves `dist/` on the platform's `$PORT`.
+`preview.allowedHosts` is open in `vite.config.js` because `vite preview`
+otherwise rejects the deploy-time host name.
 
 ## Assets
 
