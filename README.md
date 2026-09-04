@@ -3,6 +3,8 @@
 Base Camp (Camping Headquarters) and the Tooth Ridge Trail to Tooth Ridge Camp,
 built with Vite + React + Three.js.
 
+**Live:** <https://philmont-web-production.up.railway.app>
+
 ![Preview](docs/preview.png)
 
 ```bash
@@ -75,6 +77,18 @@ are 240 m wide and float 90 m up. That reads correctly in Overview and like a
 billboard from the ground. Setting `sizeAttenuation = false` in `makeLabel()`
 would give them a constant on-screen size, at the cost of changing how the
 overview reads.
+
+## Deployment
+
+Hosted on Railway (project `philmont-game`, service `philmont-web`), which
+watches the `claude/create-main-branch-mov0xn` branch and redeploys on push.
+Railway runs `npm run build` and then `npm start`, which serves `dist/` on the
+platform's `$PORT`. `preview.allowedHosts` is open in `vite.config.js` because
+`vite preview` otherwise rejects the deploy-time host name.
+
+Note that `main` still holds only the repository's first commit. If the branch
+is ever merged into `main`, point the Railway service at `main` too, or it will
+keep building the old branch.
 
 ## Assets
 
